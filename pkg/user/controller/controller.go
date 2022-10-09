@@ -13,25 +13,25 @@ import (
 )
 
 func NewUserController(ctx context.Context) controller.Controller {
-	return &userController{
+	return &UserController{
 		createUserService: service.NewCreateUserService(ctx),
 		deleteUserService: service.NewDeleteUserService(ctx),
 	}
 }
 
-type userController struct {
+type UserController struct {
 	createUserService *service.CreateUserService
 	deleteUserService *service.DeleteUserService
 }
 
-func (c *userController) SetRoutes(r chi.Router) {
+func (c *UserController) SetRoutes(r chi.Router) {
 	r.Route("/users", func(r chi.Router) {
-		r.Post("/", c.createUser)
-		r.Delete("/", c.deleteUser)
+		r.Post("/", c.CreateUser)
+		r.Delete("/", c.DeleteUser)
 	})
 }
 
-func (c *userController) createUser(w http.ResponseWriter, r *http.Request) {
+func (c *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var createUserPayload model.CreateUser
 
 	err := json.NewDecoder(r.Body).Decode(&createUserPayload)
@@ -49,7 +49,7 @@ func (c *userController) createUser(w http.ResponseWriter, r *http.Request) {
 
 	err = c.createUserService.CreateUser(createUserPayload)
 	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
+		w.WriteHeader(http.StatusInternalServerError)
 		log.Println("An error ocurred:", err)
 		return
 	}
@@ -58,7 +58,7 @@ func (c *userController) createUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (c *userController) deleteUser(w http.ResponseWriter, r *http.Request) {
+func (c *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	var deleteUserPayload model.DeleteUser
 
 	err := json.NewDecoder(r.Body).Decode(&deleteUserPayload)
@@ -76,7 +76,7 @@ func (c *userController) deleteUser(w http.ResponseWriter, r *http.Request) {
 
 	err = c.deleteUserService.DeleteUser(deleteUserPayload.Username)
 	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
+		w.WriteHeader(http.StatusInternalServerError)
 		log.Println("An error ocurred:", err)
 		return
 	}
