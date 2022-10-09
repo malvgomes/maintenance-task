@@ -1,2 +1,4 @@
 github.com/go-chi/chi v1.5.4 h1:QHdzF2szwjqVV4wmByUnTcsbIg7UGaQ0tPF2t5GcAIs=
 github.com/go-chi/chi v1.5.4/go.mod h1:uaf8YgoFazUOkPBG7fxPftUylNumIev9awIWOENIuEg=
+github.com/nleof/goyesql v1.0.1 h1:AynOKT0zEDdE3rouyUYlmnLSwJ1pjwOL0gmvjLkKI1o=
+github.com/nleof/goyesql v1.0.1/go.mod h1:tpOzlGZT8etKGAEp2dlYX2CFeVHQiC9VMYY1kaeHrC4=
