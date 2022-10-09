@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS maintenance.tasks (
     user_id INT NOT NULL,
     summary BLOB NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL DEFAULT NULL,
     PRIMARY KEY (id),
     INDEX (user_id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS maintenance.notifications (
     id INT NOT NULL AUTO_INCREMENT,
     user_id INT NOT NULL,
     task_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     INDEX (user_id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
