@@ -5,6 +5,7 @@ import (
 )
 
 type Database interface {
+	Select(i interface{}, s string, args ...interface{}) error
 	SelectOne(interface{}, string, ...interface{}) error
 	Exec(string, ...interface{}) (sql.Result, error)
 }

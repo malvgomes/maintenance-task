@@ -20,6 +20,14 @@ func TestUserRepositoryMariaDB_CreateUser(t *testing.T) {
 		VALUES (?, AES_ENCRYPT(?, 'secure_key'), ?, ?, ?);
 	`)
 
+	input := model.CreateUser{
+		Username:  "userName",
+		Password:  "password",
+		FirstName: "firstName",
+		LastName:  pointer.String("lastName"),
+		UserRole:  "MANAGER",
+	}
+
 	t.Run("Success", func(t *testing.T) {
 		repoMock, dbMock := getMockedUserRepository(t)
 
@@ -27,13 +35,7 @@ func TestUserRepositoryMariaDB_CreateUser(t *testing.T) {
 			WithArgs("userName", "password", "firstName", "lastName", "MANAGER").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		err := repoMock.CreateUser(model.CreateUser{
-			Username:  "userName",
-			Password:  "password",
-			FirstName: "firstName",
-			LastName:  pointer.String("lastName"),
-			UserRole:  "MANAGER",
-		})
+		err := repoMock.CreateUser(input)
 
 		assert.NoError(t, err)
 	})
@@ -45,13 +47,7 @@ func TestUserRepositoryMariaDB_CreateUser(t *testing.T) {
 			WithArgs("userName", "password", "firstName", "lastName", "MANAGER").
 			WillReturnError(errors.New("SQL Failure on INSERT"))
 
-		err := repoMock.CreateUser(model.CreateUser{
-			Username:  "userName",
-			Password:  "password",
-			FirstName: "firstName",
-			LastName:  pointer.String("lastName"),
-			UserRole:  "MANAGER",
-		})
+		err := repoMock.CreateUser(input)
 
 		assert.EqualError(t, err, "SQL Failure on INSERT")
 	})

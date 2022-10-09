@@ -24,6 +24,17 @@ func (d *DbWrapper) SelectOne(i interface{}, s string, args ...interface{}) erro
 	return nil
 }
 
+func (d *DbWrapper) Select(i interface{}, s string, args ...interface{}) error {
+	_, err := d.DbMap.Select(i, s, args...)
+
+	// NoRows isn't an error in this use case
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	return nil
+}
+
 func (d *DbWrapper) Exec(s string, args ...interface{}) (sql.Result, error) {
 	result, err := d.DbMap.Exec(s, args...)
 
