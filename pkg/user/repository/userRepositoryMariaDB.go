@@ -30,3 +30,9 @@ func (u *userRepositoryMariaDB) CreateUser(data model.CreateUser) error {
 
 	return err
 }
+
+func (u *userRepositoryMariaDB) DeleteUser(username string) error {
+	_, err := u.db.Exec(u.queries["delete-user"], username)
+
+	return err
+}

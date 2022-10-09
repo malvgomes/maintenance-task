@@ -24,3 +24,11 @@ func (u *CreateUser) IsValid() bool {
 	return u != nil && u.Username != "" && u.Password != "" && u.FirstName != "" && u.UserRole.
 		IsValid()
 }
+
+type DeleteUser struct {
+	Username string `json:"username"`
+}
+
+func (u *DeleteUser) IsValid() bool {
+	return u != nil && u.Username != ""
+}

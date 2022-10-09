@@ -7,6 +7,7 @@ import (
 
 type UserRepository interface {
 	CreateUser(user model.CreateUser) error
+	DeleteUser(username string) error
 }
 
 func GetUserRepository(ctx context.Context) UserRepository {
