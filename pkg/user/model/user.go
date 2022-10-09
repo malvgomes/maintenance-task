@@ -5,7 +5,6 @@ import "time"
 type User struct {
 	ID        int
 	Username  string
-	Password  string
 	FirstName string
 	LastName  *string
 	UserRole  Role
