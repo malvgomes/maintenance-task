@@ -9,6 +9,7 @@ import (
 	"maintenance-task/shared/pointer"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -54,16 +55,16 @@ func TestUserRepositoryMariaDB_CreateUser(t *testing.T) {
 }
 
 func TestUserRepositoryMariaDB_DeleteUser(t *testing.T) {
-	query := regexp.QuoteMeta(`DELETE FROM maintenance.users WHERE username = ?;`)
+	query := regexp.QuoteMeta(`DELETE FROM maintenance.users WHERE id = ?;`)
 
 	t.Run("Success", func(t *testing.T) {
 		repoMock, dbMock := getMockedUserRepository(t)
 
 		dbMock.ExpectExec(query).
-			WithArgs("userName").
+			WithArgs(123).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		err := repoMock.DeleteUser("userName")
+		err := repoMock.DeleteUser(123)
 
 		assert.NoError(t, err)
 	})
@@ -72,12 +73,67 @@ func TestUserRepositoryMariaDB_DeleteUser(t *testing.T) {
 		repoMock, dbMock := getMockedUserRepository(t)
 
 		dbMock.ExpectExec(query).
-			WithArgs("userName").
+			WithArgs(123).
 			WillReturnError(errors.New("SQL failure on DELETE"))
 
-		err := repoMock.DeleteUser("userName")
+		err := repoMock.DeleteUser(123)
 
 		assert.EqualError(t, err, "SQL failure on DELETE")
+	})
+}
+
+func TestUserRepositoryMariaDB_GetUser(t *testing.T) {
+	query := regexp.QuoteMeta(`
+		SELECT
+    		id AS ID,
+    		username AS Username,
+    		user_first_name AS FirstName,
+    		user_last_name AS LastName,
+    		user_role AS UserRole,
+    		created_at AS CreatedAt,
+    		updated_at AS UpdatedAt
+		FROM maintenance.users WHERE username = ? AND password = AES_ENCRYPT(?, 'secure_key');
+	`)
+
+	t.Run("Success", func(t *testing.T) {
+		repoMock, dbMock := getMockedUserRepository(t)
+
+		loc, err := time.LoadLocation("America/Sao_Paulo")
+		assert.NoError(t, err)
+
+		date := time.Date(2022, 9, 9, 11, 12, 13, 0, loc)
+
+		dbMock.ExpectQuery(query).
+			WithArgs("user", "pass").
+			WillReturnRows(sqlmock.NewRows([]string{
+				"ID", "Username", "FirstName", "LastName", "UserRole", "CreatedAt", "UpdatedAt"}).
+				AddRow(1, "user", "first", "last", "MANAGER", date, nil))
+
+		user, err := repoMock.GetUser("user", "pass")
+
+		assert.NoError(t, err)
+		assert.Equal(t, &model.User{
+			ID:        1,
+			Username:  "user",
+			FirstName: "first",
+			LastName:  pointer.String("last"),
+			UserRole:  model.Manager,
+			CreatedAt: date,
+			UpdatedAt: nil,
+		}, user)
+	})
+
+	t.Run("Failure", func(t *testing.T) {
+		repoMock, dbMock := getMockedUserRepository(t)
+
+		dbMock.ExpectQuery(query).
+			WithArgs("user", "pass").
+			WillReturnError(errors.New("SQL failure on SELECT user"))
+
+		user, err := repoMock.GetUser("user", "pass")
+
+		assert.EqualError(t, err, "SQL failure on SELECT user")
+		assert.Empty(t, user)
 	})
 }
 

@@ -31,8 +31,16 @@ func (u *userRepositoryMariaDB) CreateUser(data model.CreateUser) error {
 	return err
 }
 
-func (u *userRepositoryMariaDB) DeleteUser(username string) error {
-	_, err := u.db.Exec(u.queries["delete-user"], username)
+func (u *userRepositoryMariaDB) DeleteUser(userID int) error {
+	_, err := u.db.Exec(u.queries["delete-user"], userID)
 
 	return err
+}
+
+func (u *userRepositoryMariaDB) GetUser(username, password string) (*model.User, error) {
+	var user *model.User
+
+	err := u.db.SelectOne(&user, u.queries["get-user"], username, password)
+
+	return user, err
 }
