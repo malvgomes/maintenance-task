@@ -14,6 +14,6 @@ type ListTasksService struct {
 	repository repository.TaskRepository
 }
 
-func (t *ListTasksService) ListTasks(taskID int) ([]*model.Task, error) {
-	return t.repository.ListTasks(taskID)
+func (t *ListTasksService) ListTasks(userID int) ([]*model.Task, error) {
+	return t.repository.ListTasks(userID)
 }

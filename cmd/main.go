@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"log"
+	notificationRepository "maintenance-task/pkg/notification/repository"
+	taskController "maintenance-task/pkg/task/controller"
+	taskRepository "maintenance-task/pkg/task/repository"
 	userController "maintenance-task/pkg/user/controller"
-	"maintenance-task/pkg/user/repository"
+	userRepository "maintenance-task/pkg/user/repository"
 	"maintenance-task/shared/database"
 	"net/http"
 
@@ -22,6 +25,9 @@ func main() {
 	uC := userController.NewUserController(ctx)
 	uC.SetRoutes(router)
 
+	tC := taskController.NewTaskController(ctx)
+	tC.SetRoutes(router)
+
 	log.Println("Listening on port 3000")
 	if err := http.ListenAndServe(":3000", router); err != nil {
 		log.Fatal(err)
@@ -38,9 +44,13 @@ func initContext() context.Context {
 
 	ctx = context.WithValue(ctx, "database", db)
 
-	userRepository := repository.GetUserRepository(ctx)
+	userRepo := userRepository.GetUserRepository(ctx)
+	notifRepo := notificationRepository.GetNotificationRepository(ctx)
+	taskRepo := taskRepository.GetTaskRepository(ctx)
 
-	ctx = context.WithValue(ctx, "userRepository", userRepository)
+	ctx = context.WithValue(ctx, "userRepository", userRepo)
+	ctx = context.WithValue(ctx, "notificationRepository", notifRepo)
+	ctx = context.WithValue(ctx, "taskRepository", taskRepo)
 
 	return ctx
 }
