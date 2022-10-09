@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS maintenance.notifications (
     id INT NOT NULL AUTO_INCREMENT,
     user_id INT NOT NULL,
     task_id INT NOT NULL,
+    is_update BOOLEAN NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     INDEX (user_id),
