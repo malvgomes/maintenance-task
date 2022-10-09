@@ -49,15 +49,30 @@ func (mr *MockUserRepositoryMockRecorder) CreateUser(user interface{}) *gomock.C
 }
 
 // DeleteUser mocks base method.
-func (m *MockUserRepository) DeleteUser(username string) error {
+func (m *MockUserRepository) DeleteUser(userID int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteUser", username)
+	ret := m.ctrl.Call(m, "DeleteUser", userID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteUser indicates an expected call of DeleteUser.
-func (mr *MockUserRepositoryMockRecorder) DeleteUser(username interface{}) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) DeleteUser(userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockUserRepository)(nil).DeleteUser), username)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockUserRepository)(nil).DeleteUser), userID)
+}
+
+// GetUser mocks base method.
+func (m *MockUserRepository) GetUser(username, password string) (*model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUser", username, password)
+	ret0, _ := ret[0].(*model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUser indicates an expected call of GetUser.
+func (mr *MockUserRepositoryMockRecorder) GetUser(username, password interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockUserRepository)(nil).GetUser), username, password)
 }

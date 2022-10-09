@@ -74,7 +74,7 @@ func (c *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = c.deleteUserService.DeleteUser(deleteUserPayload.Username)
+	err = c.deleteUserService.DeleteUser(deleteUserPayload.UserID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println("An error ocurred:", err)

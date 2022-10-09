@@ -13,6 +13,6 @@ type DeleteUserService struct {
 	repository repository.UserRepository
 }
 
-func (u *DeleteUserService) DeleteUser(username string) error {
-	return u.repository.DeleteUser(username)
+func (u *DeleteUserService) DeleteUser(userID int) error {
+	return u.repository.DeleteUser(userID)
 }

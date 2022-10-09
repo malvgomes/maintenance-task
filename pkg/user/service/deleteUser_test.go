@@ -13,7 +13,7 @@ import (
 )
 
 func TestDeleteUserService_DeleteUser(t *testing.T) {
-	input := "userName"
+	input := 123
 
 	t.Run("Success", func(t *testing.T) {
 		svc, repoMock, finish := getMockedDeleteUserService(t)

@@ -26,9 +26,9 @@ func (u *CreateUser) IsValid() bool {
 }
 
 type DeleteUser struct {
-	Username string `json:"username"`
+	UserID int `json:"userId"`
 }
 
 func (u *DeleteUser) IsValid() bool {
-	return u != nil && u.Username != ""
+	return u != nil && u.UserID != 0
 }

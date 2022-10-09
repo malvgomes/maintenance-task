@@ -129,7 +129,7 @@ func TestCreateUser(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 	input := model.DeleteUser{
-		Username: "userName",
+		UserID: 123,
 	}
 
 	t.Run("Success", func(t *testing.T) {
@@ -140,7 +140,7 @@ func TestDeleteUser(t *testing.T) {
 		userCtrlr, mock, finish := getMockedController(t)
 		defer finish()
 
-		mock.EXPECT().DeleteUser("userName").Return(nil)
+		mock.EXPECT().DeleteUser(123).Return(nil)
 
 		router := chi.NewRouter()
 		userCtrlr.SetRoutes(router)
@@ -166,7 +166,7 @@ func TestDeleteUser(t *testing.T) {
 		userCtrlr, mock, finish := getMockedController(t)
 		defer finish()
 
-		mock.EXPECT().DeleteUser("userName").Return(errors.New("create failure"))
+		mock.EXPECT().DeleteUser(123).Return(errors.New("create failure"))
 
 		router := chi.NewRouter()
 		userCtrlr.SetRoutes(router)

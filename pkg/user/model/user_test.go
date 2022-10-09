@@ -70,7 +70,7 @@ func TestDeleteUser_IsValid(t *testing.T) {
 	}{
 		{
 			"Valid", &model.DeleteUser{
-				Username: "username",
+				UserID: 123,
 			},
 			true,
 		},
