@@ -128,7 +128,7 @@ func (c *TaskController) ListTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := r.Context().Value("session_user").(*userModel.User)
-	if user.ID != userID || user.UserRole != userModel.Manager {
+	if user.ID != userID && user.UserRole != userModel.Manager {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
