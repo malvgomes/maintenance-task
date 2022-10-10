@@ -28,20 +28,20 @@ func HandleNotificationJob(ctx context.Context, message []byte) {
 	var wg sync.WaitGroup
 
 	user, err := getUserService.GetUserByID(notification.UserID)
-	if err != nil {
-		log.Println("An error occurred trying fetch user by ID", err)
+	if err != nil || user == nil {
+		log.Println("An error occurred trying fetch user by ID")
 		return
 	}
 
 	task, err := getTaskService.GetTask(notification.TaskID)
-	if err != nil {
-		log.Println("An error occurred trying fetch task by ID", err)
+	if err != nil || task == nil {
+		log.Println("An error occurred trying fetch task by ID")
 		return
 	}
 
 	managers, err := getUserService.GetUsersByRole(userModel.Manager)
-	if err != nil {
-		log.Println("An error occurred trying fetch users by role", err)
+	if err != nil || managers == nil {
+		log.Println("An error occurred trying fetch users by role")
 		return
 	}
 
