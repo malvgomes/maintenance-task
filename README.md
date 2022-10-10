@@ -3,7 +3,7 @@
 This project consists on an API that has two types of users: Managers and Technicians
     - Managers can create and delete users, and these users can also be managers.
     - Managers can see `every other` user's tasks, and are able to delete them.
-    - Technicians can create, list and update their own tasks, and managers are notified when a task is created or updated.
+    - Technicians can create, list and update their own tasks, and `all` managers are notified when a task is created or updated.
 
 As the contents of a task may contain personal information, the task's contents are encrypted alongside the user password
 
