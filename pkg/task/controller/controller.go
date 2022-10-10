@@ -79,7 +79,7 @@ func (c *TaskController) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	message, err := json.Marshal(notificationModel.CreateNotification{
 		TaskID: ID,
-		UserID: 123,
+		UserID: user.ID,
 	})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
