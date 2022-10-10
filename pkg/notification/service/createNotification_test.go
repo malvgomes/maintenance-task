@@ -23,18 +23,24 @@ func TestCreateNotificationService_CreateNotification(t *testing.T) {
 		svc, repoMock, finish := getMockedCreateNotificationService(t)
 		defer finish()
 
-		repoMock.EXPECT().CreateNotification(input).Return(nil)
+		repoMock.EXPECT().CreateNotification(input).Return(1, nil)
 
-		assert.NoError(t, svc.CreateNotification(input))
+		ID, err := svc.CreateNotification(input)
+
+		assert.Equal(t, 1, ID)
+		assert.NoError(t, err)
 	})
 
 	t.Run("Failure", func(t *testing.T) {
 		svc, repoMock, finish := getMockedCreateNotificationService(t)
 		defer finish()
 
-		repoMock.EXPECT().CreateNotification(input).Return(errors.New("repository error"))
+		repoMock.EXPECT().CreateNotification(input).Return(0, errors.New("repository error"))
 
-		assert.EqualError(t, svc.CreateNotification(input), "repository error")
+		ID, err := svc.CreateNotification(input)
+
+		assert.Equal(t, 0, ID)
+		assert.EqualError(t, err, "repository error")
 	})
 }
 

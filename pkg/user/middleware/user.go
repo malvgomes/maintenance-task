@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"maintenance-task/pkg/user/model"
 	"maintenance-task/pkg/user/service"
 	"net/http"
 )
@@ -31,7 +30,7 @@ func (s *UserMiddleware) UserMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if user == nil || user.UserRole != model.Manager {
+		if user == nil {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}

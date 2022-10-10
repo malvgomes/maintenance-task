@@ -15,3 +15,25 @@ SELECT
     created_at AS CreatedAt,
     updated_at AS UpdatedAt
 FROM maintenance.users WHERE username = ? AND password = AES_ENCRYPT(?, 'secure_key');
+
+-- name: get-user-by-id
+SELECT
+    id AS ID,
+    username AS Username,
+    user_first_name AS FirstName,
+    user_last_name AS LastName,
+    user_role AS UserRole,
+    created_at AS CreatedAt,
+    updated_at AS UpdatedAt
+FROM maintenance.users WHERE id = ?;
+
+-- name: get-users-by-role
+SELECT
+    id AS ID,
+    username AS Username,
+    user_first_name AS FirstName,
+    user_last_name AS LastName,
+    user_role AS UserRole,
+    created_at AS CreatedAt,
+    updated_at AS UpdatedAt
+FROM maintenance.users WHERE user_role = ?;

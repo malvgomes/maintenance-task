@@ -14,6 +14,6 @@ type CreateTaskService struct {
 	repository repository.TaskRepository
 }
 
-func (t *CreateTaskService) CreateTask(input model.CreateTask) error {
+func (t *CreateTaskService) CreateTask(input model.CreateTask) (int, error) {
 	return t.repository.CreateTask(input)
 }

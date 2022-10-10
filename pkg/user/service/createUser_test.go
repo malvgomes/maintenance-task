@@ -27,18 +27,24 @@ func TestCreateUserService_CreateUser(t *testing.T) {
 		svc, repoMock, finish := getMockedCreateUserService(t)
 		defer finish()
 
-		repoMock.EXPECT().CreateUser(input).Return(nil)
+		repoMock.EXPECT().CreateUser(input).Return(1, nil)
 
-		assert.NoError(t, svc.CreateUser(input))
+		ID, err := svc.CreateUser(input)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, ID)
 	})
 
 	t.Run("Failure", func(t *testing.T) {
 		svc, repoMock, finish := getMockedCreateUserService(t)
 		defer finish()
 
-		repoMock.EXPECT().CreateUser(input).Return(errors.New("repository error"))
+		repoMock.EXPECT().CreateUser(input).Return(0, errors.New("repository error"))
 
-		assert.EqualError(t, svc.CreateUser(input), "repository error")
+		ID, err := svc.CreateUser(input)
+
+		assert.EqualError(t, err, "repository error")
+		assert.Equal(t, 0, ID)
 	})
 }
 

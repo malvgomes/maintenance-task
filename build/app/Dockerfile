@@ -7,7 +7,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 ADD . .
 
-RUN go build -mod vendor -o maintenance-task cmd/main.go
+RUN go build -mod vendor -o maintenance-task cmd/app/main.go
 
 EXPOSE 3000
 

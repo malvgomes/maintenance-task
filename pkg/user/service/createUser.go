@@ -14,6 +14,6 @@ type CreateUserService struct {
 	repository repository.UserRepository
 }
 
-func (u *CreateUserService) CreateUser(user model.CreateUser) error {
+func (u *CreateUserService) CreateUser(user model.CreateUser) (int, error) {
 	return u.repository.CreateUser(user)
 }

@@ -6,10 +6,7 @@ import (
 )
 
 type NotificationRepository interface {
-	CreateNotification(input model.CreateNotification) error
-	DeleteNotification(notificationID int) error
-	ClearNotifications(userID int) error
-	ListNotifications(userID int) ([]*model.Notification, error)
+	CreateNotification(input model.CreateNotification) (int, error)
 }
 
 func GetNotificationRepository(ctx context.Context) NotificationRepository {

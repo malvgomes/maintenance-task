@@ -17,27 +17,15 @@ type notificationRepositoryMariaDB struct {
 	db      database.Database
 }
 
-func (n *notificationRepositoryMariaDB) CreateNotification(input model.CreateNotification) error {
-	_, err := n.db.Exec(n.queries["insert-notification"], input.UserID, input.TaskID)
-	return err
-}
+func (n *notificationRepositoryMariaDB) CreateNotification(input model.CreateNotification) (int, error) {
+	res, err := n.db.Exec(n.queries["insert-notification"], input.UserID, input.TaskID)
+	if err != nil {
+		return 0, err
+	}
 
-func (n *notificationRepositoryMariaDB) DeleteNotification(notificationID int) error {
-	_, err := n.db.Exec(n.queries["delete-notification"], notificationID)
-	return err
-}
+	ID, _ := res.LastInsertId()
 
-func (n *notificationRepositoryMariaDB) ClearNotifications(userID int) error {
-	_, err := n.db.Exec(n.queries["clear-notifications"], userID)
-	return err
-}
-
-func (n *notificationRepositoryMariaDB) ListNotifications(userID int) ([]*model.Notification, error) {
-	var notifications []*model.Notification
-
-	err := n.db.Select(&notifications, n.queries["list-notifications"], userID)
-
-	return notifications, err
+	return int(ID), nil
 }
 
 func NewNotificationRepositoryMariaDB(ctx context.Context) NotificationRepository {

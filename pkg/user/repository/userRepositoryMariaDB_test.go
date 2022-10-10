@@ -36,9 +36,10 @@ func TestUserRepositoryMariaDB_CreateUser(t *testing.T) {
 			WithArgs("userName", "password", "firstName", "lastName", "MANAGER").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		err := repoMock.CreateUser(input)
+		ID, err := repoMock.CreateUser(input)
 
 		assert.NoError(t, err)
+		assert.Equal(t, 1, ID)
 	})
 
 	t.Run("Failure", func(t *testing.T) {
@@ -48,9 +49,10 @@ func TestUserRepositoryMariaDB_CreateUser(t *testing.T) {
 			WithArgs("userName", "password", "firstName", "lastName", "MANAGER").
 			WillReturnError(errors.New("SQL Failure on INSERT"))
 
-		err := repoMock.CreateUser(input)
+		ID, err := repoMock.CreateUser(input)
 
 		assert.EqualError(t, err, "SQL Failure on INSERT")
+		assert.Equal(t, 0, ID)
 	})
 }
 
@@ -133,6 +135,116 @@ func TestUserRepositoryMariaDB_GetUser(t *testing.T) {
 		user, err := repoMock.GetUser("user", "pass")
 
 		assert.EqualError(t, err, "SQL failure on SELECT user")
+		assert.Empty(t, user)
+	})
+}
+
+func TestUserRepositoryMariaDB_GetUserByID(t *testing.T) {
+	query := regexp.QuoteMeta(`
+		SELECT
+		    id AS ID,
+		    username AS Username,
+		    user_first_name AS FirstName,
+		    user_last_name AS LastName,
+		    user_role AS UserRole,
+		    created_at AS CreatedAt,
+		    updated_at AS UpdatedAt
+		FROM maintenance.users WHERE id = ?;
+	`)
+
+	t.Run("Success", func(t *testing.T) {
+		repoMock, dbMock := getMockedUserRepository(t)
+
+		loc, err := time.LoadLocation("America/Sao_Paulo")
+		assert.NoError(t, err)
+
+		date := time.Date(2022, 9, 9, 11, 12, 13, 0, loc)
+
+		dbMock.ExpectQuery(query).
+			WithArgs(1).
+			WillReturnRows(sqlmock.NewRows([]string{
+				"ID", "Username", "FirstName", "LastName", "UserRole", "CreatedAt", "UpdatedAt"}).
+				AddRow(1, "user", "first", "last", "MANAGER", date, nil))
+
+		user, err := repoMock.GetUserByID(1)
+
+		assert.NoError(t, err)
+		assert.Equal(t, &model.User{
+			ID:        1,
+			Username:  "user",
+			FirstName: "first",
+			LastName:  pointer.String("last"),
+			UserRole:  model.Manager,
+			CreatedAt: date,
+			UpdatedAt: nil,
+		}, user)
+	})
+
+	t.Run("Failure", func(t *testing.T) {
+		repoMock, dbMock := getMockedUserRepository(t)
+
+		dbMock.ExpectQuery(query).
+			WithArgs(1).
+			WillReturnError(errors.New("SQL failure on SELECT user by ID"))
+
+		user, err := repoMock.GetUserByID(1)
+
+		assert.EqualError(t, err, "SQL failure on SELECT user by ID")
+		assert.Empty(t, user)
+	})
+}
+
+func TestUserRepositoryMariaDB_GetUsersByRole(t *testing.T) {
+	query := regexp.QuoteMeta(`
+		SELECT
+		    id AS ID,
+		    username AS Username,
+		    user_first_name AS FirstName,
+		    user_last_name AS LastName,
+		    user_role AS UserRole,
+		    created_at AS CreatedAt,
+		    updated_at AS UpdatedAt
+		FROM maintenance.users WHERE user_role = ?;
+	`)
+
+	t.Run("Success", func(t *testing.T) {
+		repoMock, dbMock := getMockedUserRepository(t)
+
+		loc, err := time.LoadLocation("America/Sao_Paulo")
+		assert.NoError(t, err)
+
+		date := time.Date(2022, 9, 9, 11, 12, 13, 0, loc)
+
+		dbMock.ExpectQuery(query).
+			WithArgs(model.Manager).
+			WillReturnRows(sqlmock.NewRows([]string{
+				"ID", "Username", "FirstName", "LastName", "UserRole", "CreatedAt", "UpdatedAt"}).
+				AddRow(1, "user", "first", "last", "MANAGER", date, nil))
+
+		user, err := repoMock.GetUsersByRole(model.Manager)
+
+		assert.NoError(t, err)
+		assert.Equal(t, []*model.User{{
+			ID:        1,
+			Username:  "user",
+			FirstName: "first",
+			LastName:  pointer.String("last"),
+			UserRole:  model.Manager,
+			CreatedAt: date,
+			UpdatedAt: nil,
+		}}, user)
+	})
+
+	t.Run("Failure", func(t *testing.T) {
+		repoMock, dbMock := getMockedUserRepository(t)
+
+		dbMock.ExpectQuery(query).
+			WithArgs(model.Manager).
+			WillReturnError(errors.New("SQL failure on SELECT users by role"))
+
+		user, err := repoMock.GetUsersByRole(model.Manager)
+
+		assert.EqualError(t, err, "SQL failure on SELECT users by role")
 		assert.Empty(t, user)
 	})
 }

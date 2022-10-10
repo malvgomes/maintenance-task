@@ -17,10 +17,15 @@ type taskRepositoryMariaDB struct {
 	db      database.Database
 }
 
-func (t *taskRepositoryMariaDB) CreateTask(input model.CreateTask) error {
-	_, err := t.db.Exec(t.queries["insert-task"], input.UserID, input.Summary)
+func (t *taskRepositoryMariaDB) CreateTask(input model.CreateTask) (int, error) {
+	res, err := t.db.Exec(t.queries["insert-task"], input.UserID, input.Summary)
+	if err != nil {
+		return 0, err
+	}
 
-	return err
+	ID, _ := res.LastInsertId()
+
+	return int(ID), nil
 }
 
 func (t *taskRepositoryMariaDB) UpdateTask(input model.UpdateTask) error {
@@ -41,6 +46,14 @@ func (t *taskRepositoryMariaDB) ListTasks(userID int) ([]*model.Task, error) {
 	err := t.db.Select(&tasks, t.queries["list-tasks"], userID)
 
 	return tasks, err
+}
+
+func (t *taskRepositoryMariaDB) GetTask(taskID int) (*model.Task, error) {
+	var task *model.Task
+
+	err := t.db.SelectOne(&task, t.queries["get-task"], taskID)
+
+	return task, err
 }
 
 func NewTaskRepositoryMariaDB(ctx context.Context) TaskRepository {

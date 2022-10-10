@@ -3,7 +3,9 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	notificationModel "maintenance-task/pkg/notification/model"
 	"maintenance-task/pkg/task/model"
 	"maintenance-task/pkg/task/service"
 	"maintenance-task/pkg/task/viewmodel"
@@ -11,6 +13,7 @@ import (
 	userModel "maintenance-task/pkg/user/model"
 	userService "maintenance-task/pkg/user/service"
 	"maintenance-task/shared/controller"
+	"maintenance-task/shared/queue"
 	"net/http"
 	"strconv"
 
@@ -24,6 +27,7 @@ func NewTaskController(ctx context.Context) controller.Controller {
 		listTasksService:  service.NewListTasksService(ctx),
 		updateTaskService: service.NewUpdateTaskService(ctx),
 		userMiddleware:    middleware.NewUserMiddleware(userService.NewGetUserService(ctx)),
+		queueProducer:     ctx.Value("queueProducer").(queue.Producer),
 	}
 }
 
@@ -33,6 +37,7 @@ type TaskController struct {
 	listTasksService  *service.ListTasksService
 	updateTaskService *service.UpdateTaskService
 	userMiddleware    *middleware.UserMiddleware
+	queueProducer     queue.Producer
 }
 
 func (c *TaskController) SetRoutes(r chi.Router) {
@@ -66,16 +71,30 @@ func (c *TaskController) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = c.createTaskService.CreateTask(createTaskPayload)
+	ID, err := c.createTaskService.CreateTask(createTaskPayload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("User %d performed a task", createTaskPayload.UserID)
+	message, err := json.Marshal(notificationModel.CreateNotification{
+		TaskID: ID,
+		UserID: 123,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = c.queueProducer.Publish("notification", message)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("Task %d created", ID)))
+	w.WriteHeader(http.StatusOK)
 }
 
 func (c *TaskController) DeleteTask(w http.ResponseWriter, r *http.Request) {
@@ -154,6 +173,21 @@ func (c *TaskController) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = c.updateTaskService.UpdateTask(updateTaskPayload)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	message, err := json.Marshal(notificationModel.CreateNotification{
+		TaskID: updateTaskPayload.ID,
+		UserID: user.ID,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = c.queueProducer.Publish("notification", message)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

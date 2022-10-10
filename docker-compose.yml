@@ -12,6 +12,20 @@ services:
       - bridge-network
     depends_on:
       - db
+      - rabbitmq
+
+  worker:
+    build:
+      context: .
+      dockerfile: build/worker/Dockerfile
+    ports:
+      - "3001:3001"
+    restart: always
+    networks:
+      - bridge-network
+    depends_on:
+      - db
+      - rabbitmq
 
   db:
     image: mariadb:10.10.1-rc-jammy
@@ -28,6 +42,17 @@ services:
     volumes:
       - mariadb-data:/var/lib/mysql
       - ./build/database:/docker-entrypoint-initdb.d
+    logging:
+      driver: none
+
+  rabbitmq:
+    image: rabbitmq:3.9-management
+    container_name: 'rabbitmq'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - bridge-network
     logging:
       driver: none
 

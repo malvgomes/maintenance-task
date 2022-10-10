@@ -61,34 +61,3 @@ func TestCreateUser_IsValid(t *testing.T) {
 		})
 	}
 }
-
-func TestDeleteUser_IsValid(t *testing.T) {
-	tests := []struct {
-		name  string
-		input *model.DeleteUser
-		valid bool
-	}{
-		{
-			"Valid", &model.DeleteUser{
-				UserID: 123,
-			},
-			true,
-		},
-		{
-			"Invalid - received nil",
-			nil,
-			false,
-		},
-		{
-			"Invalid - received empty",
-			&model.DeleteUser{},
-			false,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.valid, test.input.IsValid())
-		})
-	}
-}

@@ -39,7 +39,7 @@ func TestCreateUser(t *testing.T) {
 		userCtrlr, mock, finish := getMockedController(t)
 		defer finish()
 
-		mock.EXPECT().CreateUser(input).Return(nil)
+		mock.EXPECT().CreateUser(input).Return(1, nil)
 
 		router := chi.NewRouter()
 		userCtrlr.SetRoutes(router)
@@ -51,10 +51,10 @@ func TestCreateUser(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 
-		_, err = io.ReadAll(result.Body)
+		body, err := io.ReadAll(result.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusCreated, result.StatusCode)
-
+		assert.Equal(t, http.StatusOK, result.StatusCode)
+		assert.Equal(t, "User 1 created", string(body))
 	})
 
 	t.Run("Failure", func(t *testing.T) {
@@ -65,7 +65,7 @@ func TestCreateUser(t *testing.T) {
 		userCtrlr, mock, finish := getMockedController(t)
 		defer finish()
 
-		mock.EXPECT().CreateUser(input).Return(errors.New("create failure"))
+		mock.EXPECT().CreateUser(input).Return(0, errors.New("create failure"))
 
 		router := chi.NewRouter()
 		userCtrlr.SetRoutes(router)
@@ -128,15 +128,7 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	input := model.DeleteUser{
-		UserID: 123,
-	}
-
 	t.Run("Success", func(t *testing.T) {
-		var buf bytes.Buffer
-		err := json.NewEncoder(&buf).Encode(input)
-		assert.NoError(t, err)
-
 		userCtrlr, mock, finish := getMockedController(t)
 		defer finish()
 
@@ -146,23 +138,24 @@ func TestDeleteUser(t *testing.T) {
 		userCtrlr.SetRoutes(router)
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodDelete, "/users", &buf)
+		r := httptest.NewRequest(http.MethodDelete, "/users", nil)
+
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("ID", "123")
+
+		r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 
 		userCtrlr.(*userController.UserController).DeleteUser(w, r)
 		result := w.Result()
 		defer result.Body.Close()
 
-		_, err = io.ReadAll(result.Body)
+		_, err := io.ReadAll(result.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusNoContent, result.StatusCode)
 
 	})
 
 	t.Run("Failure", func(t *testing.T) {
-		var buf bytes.Buffer
-		err := json.NewEncoder(&buf).Encode(input)
-		assert.NoError(t, err)
-
 		userCtrlr, mock, finish := getMockedController(t)
 		defer finish()
 
@@ -172,26 +165,12 @@ func TestDeleteUser(t *testing.T) {
 		userCtrlr.SetRoutes(router)
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodDelete, "/users", &buf)
-
-		userCtrlr.(*userController.UserController).DeleteUser(w, r)
-		result := w.Result()
-		defer result.Body.Close()
-
-		_, err = io.ReadAll(result.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
-	})
-
-	t.Run("Bad input", func(t *testing.T) {
-		userCtrlr, _, finish := getMockedController(t)
-		defer finish()
-
-		router := chi.NewRouter()
-		userCtrlr.SetRoutes(router)
-
-		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodDelete, "/users", nil)
+
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("ID", "123")
+
+		r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 
 		userCtrlr.(*userController.UserController).DeleteUser(w, r)
 		result := w.Result()
@@ -202,13 +181,7 @@ func TestDeleteUser(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
 	})
 
-	t.Run("Bad Request", func(t *testing.T) {
-		invalidInput := model.CreateUser{}
-
-		var buf bytes.Buffer
-		err := json.NewEncoder(&buf).Encode(invalidInput)
-		assert.NoError(t, err)
-
+	t.Run("Invalid input", func(t *testing.T) {
 		userCtrlr, _, finish := getMockedController(t)
 		defer finish()
 
@@ -216,15 +189,20 @@ func TestDeleteUser(t *testing.T) {
 		userCtrlr.SetRoutes(router)
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodDelete, "/users", &buf)
+		r := httptest.NewRequest(http.MethodDelete, "/users", nil)
+
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("ID", "test")
+
+		r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 
 		userCtrlr.(*userController.UserController).DeleteUser(w, r)
 		result := w.Result()
 		defer result.Body.Close()
 
-		_, err = io.ReadAll(result.Body)
+		_, err := io.ReadAll(result.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusBadRequest, result.StatusCode)
+		assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
 	})
 
 }

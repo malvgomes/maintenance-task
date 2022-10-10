@@ -10,6 +10,7 @@ import (
 	"maintenance-task/pkg/task/model"
 	userModel "maintenance-task/pkg/user/model"
 	"maintenance-task/shared/controller"
+	mockQueue "maintenance-task/shared/mock/queue"
 	mockRepository "maintenance-task/shared/mock/task/repository"
 	mockUserRepository "maintenance-task/shared/mock/user/repository"
 	"net/http"
@@ -34,10 +35,38 @@ func TestCreateTask(t *testing.T) {
 		err := json.NewEncoder(&buf).Encode(input)
 		assert.NoError(t, err)
 
-		routerContext, taskCtrlr, taskMock, finish := getMockedController(t)
+		routerContext, taskCtrlr, taskMock, queueMock, finish := getMockedController(t)
 		defer finish()
 
-		taskMock.EXPECT().CreateTask(input).Return(nil)
+		taskMock.EXPECT().CreateTask(input).Return(1, nil)
+		queueMock.EXPECT().Publish("notification", []byte(`{"UserID":123,"TaskID":1}`)).Return(nil)
+
+		router := chi.NewRouter()
+		taskCtrlr.SetRoutes(router)
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/tasks", &buf)
+
+		r = r.WithContext(routerContext)
+
+		taskCtrlr.(*taskController.TaskController).CreateTask(w, r)
+		result := w.Result()
+		defer result.Body.Close()
+
+		_, err = io.ReadAll(result.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, result.StatusCode)
+	})
+
+	t.Run("Failure", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := json.NewEncoder(&buf).Encode(input)
+		assert.NoError(t, err)
+
+		routerContext, taskCtrlr, taskMock, _, finish := getMockedController(t)
+		defer finish()
+
+		taskMock.EXPECT().CreateTask(input).Return(0, errors.New("create failure"))
 
 		router := chi.NewRouter()
 		taskCtrlr.SetRoutes(router)
@@ -52,18 +81,44 @@ func TestCreateTask(t *testing.T) {
 
 		_, err = io.ReadAll(result.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusCreated, result.StatusCode)
+		assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
 	})
 
-	t.Run("Failure", func(t *testing.T) {
+	t.Run("Invalid User", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := json.NewEncoder(&buf).Encode(model.CreateTask{UserID: 456, Summary: "summary"})
+		assert.NoError(t, err)
+
+		routerContext, taskCtrlr, _, _, finish := getMockedController(t)
+		defer finish()
+
+		router := chi.NewRouter()
+		taskCtrlr.SetRoutes(router)
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/tasks", &buf)
+		r = r.WithContext(routerContext)
+
+		taskCtrlr.(*taskController.TaskController).CreateTask(w, r)
+		result := w.Result()
+		defer result.Body.Close()
+
+		_, err = io.ReadAll(result.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusForbidden, result.StatusCode)
+	})
+
+	t.Run("Publish Failure", func(t *testing.T) {
 		var buf bytes.Buffer
 		err := json.NewEncoder(&buf).Encode(input)
 		assert.NoError(t, err)
 
-		routerContext, taskCtrlr, taskMock, finish := getMockedController(t)
+		routerContext, taskCtrlr, taskMock, queueMock, finish := getMockedController(t)
 		defer finish()
 
-		taskMock.EXPECT().CreateTask(input).Return(errors.New("create failure"))
+		taskMock.EXPECT().CreateTask(input).Return(1, nil)
+		queueMock.EXPECT().Publish("notification", []byte(`{"UserID":123,"TaskID":1}`)).
+			Return(errors.New("publish failure"))
 
 		router := chi.NewRouter()
 		taskCtrlr.SetRoutes(router)
@@ -83,7 +138,7 @@ func TestCreateTask(t *testing.T) {
 	})
 
 	t.Run("Bad Input", func(t *testing.T) {
-		routerContext, taskCtrlr, _, finish := getMockedController(t)
+		routerContext, taskCtrlr, _, _, finish := getMockedController(t)
 		defer finish()
 
 		router := chi.NewRouter()
@@ -109,7 +164,7 @@ func TestCreateTask(t *testing.T) {
 		err := json.NewEncoder(&buf).Encode(invalidInput)
 		assert.NoError(t, err)
 
-		routerContext, taskCtrlr, _, finish := getMockedController(t)
+		routerContext, taskCtrlr, _, _, finish := getMockedController(t)
 		defer finish()
 
 		router := chi.NewRouter()
@@ -131,7 +186,7 @@ func TestCreateTask(t *testing.T) {
 
 func TestDeleteTask(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		routerContext, taskCtrlr, mock, finish := getMockedController(t)
+		routerContext, taskCtrlr, mock, _, finish := getMockedController(t)
 		defer finish()
 
 		mock.EXPECT().DeleteTask(123).Return(nil)
@@ -157,7 +212,7 @@ func TestDeleteTask(t *testing.T) {
 	})
 
 	t.Run("Failure", func(t *testing.T) {
-		routerContext, taskCtrlr, mock, finish := getMockedController(t)
+		routerContext, taskCtrlr, mock, _, finish := getMockedController(t)
 		defer finish()
 
 		mock.EXPECT().DeleteTask(123).Return(errors.New("delete failure"))
@@ -183,7 +238,7 @@ func TestDeleteTask(t *testing.T) {
 	})
 
 	t.Run("Invalid input", func(t *testing.T) {
-		_, taskCtrlr, _, finish := getMockedController(t)
+		_, taskCtrlr, _, _, finish := getMockedController(t)
 		defer finish()
 
 		router := chi.NewRouter()
@@ -209,7 +264,7 @@ func TestDeleteTask(t *testing.T) {
 
 func TestListTasks(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		routerContext, taskCtrlr, mock, finish := getMockedController(t)
+		routerContext, taskCtrlr, mock, _, finish := getMockedController(t)
 		defer finish()
 
 		loc, err := time.LoadLocation("America/Sao_Paulo")
@@ -247,7 +302,7 @@ func TestListTasks(t *testing.T) {
 	})
 
 	t.Run("Failure", func(t *testing.T) {
-		routerContext, taskCtrlr, mock, finish := getMockedController(t)
+		routerContext, taskCtrlr, mock, _, finish := getMockedController(t)
 		defer finish()
 		mock.EXPECT().ListTasks(123).Return(nil, errors.New("list failure"))
 
@@ -272,7 +327,7 @@ func TestListTasks(t *testing.T) {
 	})
 
 	t.Run("Invalid input", func(t *testing.T) {
-		_, taskCtrlr, _, finish := getMockedController(t)
+		_, taskCtrlr, _, _, finish := getMockedController(t)
 		defer finish()
 
 		router := chi.NewRouter()
@@ -308,16 +363,18 @@ func TestUpdateTask(t *testing.T) {
 		err := json.NewEncoder(&buf).Encode(input)
 		assert.NoError(t, err)
 
-		routerContext, taskCtrlr, mock, finish := getMockedController(t)
+		routerContext, taskCtrlr, taskMock, queueMock, finish := getMockedController(t)
 		defer finish()
 
-		mock.EXPECT().UpdateTask(input).Return(nil)
+		taskMock.EXPECT().UpdateTask(input).Return(nil)
+		queueMock.EXPECT().Publish("notification", []byte(`{"UserID":123,"TaskID":123}`)).Return(nil)
 
 		router := chi.NewRouter()
 		taskCtrlr.SetRoutes(router)
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPut, "/tasks", &buf)
+
 		r = r.WithContext(routerContext)
 
 		taskCtrlr.(*taskController.TaskController).UpdateTask(w, r)
@@ -334,7 +391,7 @@ func TestUpdateTask(t *testing.T) {
 		err := json.NewEncoder(&buf).Encode(input)
 		assert.NoError(t, err)
 
-		routerContext, taskCtrlr, mock, finish := getMockedController(t)
+		routerContext, taskCtrlr, mock, _, finish := getMockedController(t)
 		defer finish()
 
 		mock.EXPECT().UpdateTask(input).Return(errors.New("update failure"))
@@ -355,8 +412,61 @@ func TestUpdateTask(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
 	})
 
+	t.Run("Invalid User", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := json.NewEncoder(&buf).Encode(model.UpdateTask{UserID: 456, ID: 123, Summary: "summary"})
+		assert.NoError(t, err)
+
+		routerContext, taskCtrlr, _, _, finish := getMockedController(t)
+		defer finish()
+
+		router := chi.NewRouter()
+		taskCtrlr.SetRoutes(router)
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPut, "/tasks", &buf)
+		r = r.WithContext(routerContext)
+
+		taskCtrlr.(*taskController.TaskController).UpdateTask(w, r)
+		result := w.Result()
+		defer result.Body.Close()
+
+		_, err = io.ReadAll(result.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusForbidden, result.StatusCode)
+	})
+
+	t.Run("Publish Failure", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := json.NewEncoder(&buf).Encode(input)
+		assert.NoError(t, err)
+
+		routerContext, taskCtrlr, taskMock, queueMock, finish := getMockedController(t)
+		defer finish()
+
+		taskMock.EXPECT().UpdateTask(input).Return(nil)
+		queueMock.EXPECT().Publish("notification", []byte(`{"UserID":123,"TaskID":123}`)).
+			Return(errors.New("publish failure"))
+
+		router := chi.NewRouter()
+		taskCtrlr.SetRoutes(router)
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPut, "/tasks", &buf)
+
+		r = r.WithContext(routerContext)
+
+		taskCtrlr.(*taskController.TaskController).UpdateTask(w, r)
+		result := w.Result()
+		defer result.Body.Close()
+
+		_, err = io.ReadAll(result.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
+	})
+
 	t.Run("Bad Input", func(t *testing.T) {
-		_, taskCtrlr, _, finish := getMockedController(t)
+		_, taskCtrlr, _, _, finish := getMockedController(t)
 		defer finish()
 
 		router := chi.NewRouter()
@@ -381,7 +491,7 @@ func TestUpdateTask(t *testing.T) {
 		err := json.NewEncoder(&buf).Encode(invalidInput)
 		assert.NoError(t, err)
 
-		routerContext, taskCtrlr, _, finish := getMockedController(t)
+		routerContext, taskCtrlr, _, _, finish := getMockedController(t)
 		defer finish()
 
 		router := chi.NewRouter()
@@ -405,6 +515,7 @@ func getMockedController(t *testing.T) (
 	context.Context,
 	controller.Controller,
 	*mockRepository.MockTaskRepository,
+	*mockQueue.MockProducer,
 	func(),
 ) {
 	t.Helper()
@@ -413,6 +524,7 @@ func getMockedController(t *testing.T) (
 
 	userRepositoryMock := mockUserRepository.NewMockUserRepository(ctrl)
 	taskRepositoryMock := mockRepository.NewMockTaskRepository(ctrl)
+	queueProducerMock := mockQueue.NewMockProducer(ctrl)
 
 	finish := func() {
 		ctrl.Finish()
@@ -420,10 +532,11 @@ func getMockedController(t *testing.T) (
 
 	ctx := context.WithValue(context.Background(), "userRepository", userRepositoryMock)
 	ctx = context.WithValue(ctx, "taskRepository", taskRepositoryMock)
+	ctx = context.WithValue(ctx, "queueProducer", queueProducerMock)
 
 	routerContext := context.WithValue(context.Background(), "session_user",
 		&userModel.User{ID: 123, UserRole: userModel.Manager})
 
-	return routerContext, taskController.NewTaskController(ctx), taskRepositoryMock, finish
+	return routerContext, taskController.NewTaskController(ctx), taskRepositoryMock, queueProducerMock, finish
 
 }

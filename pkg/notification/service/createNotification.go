@@ -15,6 +15,6 @@ type CreateNotificationService struct {
 	repository repository.NotificationRepository
 }
 
-func (u *CreateNotificationService) CreateNotification(input model.CreateNotification) error {
+func (u *CreateNotificationService) CreateNotification(input model.CreateNotification) (int, error) {
 	return u.repository.CreateNotification(input)
 }

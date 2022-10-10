@@ -29,6 +29,9 @@ github.com/nleof/goyesql
 github.com/pmezard/go-difflib/difflib
 # github.com/poy/onpar v1.1.2
 ## explicit; go 1.14
+# github.com/streadway/amqp v1.0.0
+## explicit; go 1.10
+github.com/streadway/amqp
 # github.com/stretchr/testify v1.8.0
 ## explicit; go 1.13
 github.com/stretchr/testify/assert

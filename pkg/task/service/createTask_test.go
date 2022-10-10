@@ -23,18 +23,24 @@ func TestCreateTaskService_CreateTask(t *testing.T) {
 		svc, repoMock, finish := getMockedCreateTaskService(t)
 		defer finish()
 
-		repoMock.EXPECT().CreateTask(input).Return(nil)
+		repoMock.EXPECT().CreateTask(input).Return(1, nil)
 
-		assert.NoError(t, svc.CreateTask(input))
+		ID, err := svc.CreateTask(input)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, ID)
 	})
 
 	t.Run("Failure", func(t *testing.T) {
 		svc, repoMock, finish := getMockedCreateTaskService(t)
 		defer finish()
 
-		repoMock.EXPECT().CreateTask(input).Return(errors.New("repository error"))
+		repoMock.EXPECT().CreateTask(input).Return(0, errors.New("repository error"))
 
-		assert.EqualError(t, svc.CreateTask(input), "repository error")
+		ID, err := svc.CreateTask(input)
+
+		assert.EqualError(t, err, "repository error")
+		assert.Equal(t, 0, ID)
 	})
 }
 

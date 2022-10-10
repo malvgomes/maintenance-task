@@ -34,59 +34,17 @@ func (m *MockNotificationRepository) EXPECT() *MockNotificationRepositoryMockRec
 	return m.recorder
 }
 
-// ClearNotifications mocks base method.
-func (m *MockNotificationRepository) ClearNotifications(userID int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearNotifications", userID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ClearNotifications indicates an expected call of ClearNotifications.
-func (mr *MockNotificationRepositoryMockRecorder) ClearNotifications(userID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearNotifications", reflect.TypeOf((*MockNotificationRepository)(nil).ClearNotifications), userID)
-}
-
 // CreateNotification mocks base method.
-func (m *MockNotificationRepository) CreateNotification(input model.CreateNotification) error {
+func (m *MockNotificationRepository) CreateNotification(input model.CreateNotification) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNotification", input)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateNotification indicates an expected call of CreateNotification.
 func (mr *MockNotificationRepositoryMockRecorder) CreateNotification(input interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNotification", reflect.TypeOf((*MockNotificationRepository)(nil).CreateNotification), input)
-}
-
-// DeleteNotification mocks base method.
-func (m *MockNotificationRepository) DeleteNotification(notificationID int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteNotification", notificationID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteNotification indicates an expected call of DeleteNotification.
-func (mr *MockNotificationRepositoryMockRecorder) DeleteNotification(notificationID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNotification", reflect.TypeOf((*MockNotificationRepository)(nil).DeleteNotification), notificationID)
-}
-
-// ListNotifications mocks base method.
-func (m *MockNotificationRepository) ListNotifications(userID int) ([]*model.Notification, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListNotifications", userID)
-	ret0, _ := ret[0].([]*model.Notification)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListNotifications indicates an expected call of ListNotifications.
-func (mr *MockNotificationRepositoryMockRecorder) ListNotifications(userID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNotifications", reflect.TypeOf((*MockNotificationRepository)(nil).ListNotifications), userID)
 }
