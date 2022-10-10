@@ -21,9 +21,10 @@ func (t *CreateTask) IsValid() bool {
 
 type UpdateTask struct {
 	ID      int    `json:"id"`
+	UserID  int    `json:"userId"`
 	Summary string `json:"summary"`
 }
 
 func (t *UpdateTask) IsValid() bool {
-	return t != nil && t.ID != 0 && t.Summary != "" && len(t.Summary) < 2500
+	return t != nil && t.ID != 0 && t.Summary != "" && t.UserID != 0 && len(t.Summary) < 2500
 }

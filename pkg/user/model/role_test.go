@@ -23,5 +23,4 @@ func TestRole_IsValid(t *testing.T) {
 			assert.Equal(t, test.valid, test.role.IsValid())
 		})
 	}
-
 }

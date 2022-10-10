@@ -53,7 +53,7 @@ func TestCreateUser(t *testing.T) {
 
 		_, err = io.ReadAll(result.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, result.StatusCode)
+		assert.Equal(t, http.StatusCreated, result.StatusCode)
 
 	})
 
@@ -154,7 +154,7 @@ func TestDeleteUser(t *testing.T) {
 
 		_, err = io.ReadAll(result.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, result.StatusCode)
+		assert.Equal(t, http.StatusNoContent, result.StatusCode)
 
 	})
 

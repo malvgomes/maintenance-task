@@ -7,6 +7,9 @@ import (
 	"maintenance-task/pkg/task/model"
 	"maintenance-task/pkg/task/service"
 	"maintenance-task/pkg/task/viewmodel"
+	"maintenance-task/pkg/user/middleware"
+	userModel "maintenance-task/pkg/user/model"
+	userService "maintenance-task/pkg/user/service"
 	"maintenance-task/shared/controller"
 	"net/http"
 	"strconv"
@@ -20,6 +23,7 @@ func NewTaskController(ctx context.Context) controller.Controller {
 		deleteTaskService: service.NewDeleteTaskService(ctx),
 		listTasksService:  service.NewListTasksService(ctx),
 		updateTaskService: service.NewUpdateTaskService(ctx),
+		userMiddleware:    middleware.NewUserMiddleware(userService.NewGetUserService(ctx)),
 	}
 }
 
@@ -28,13 +32,15 @@ type TaskController struct {
 	deleteTaskService *service.DeleteTaskService
 	listTasksService  *service.ListTasksService
 	updateTaskService *service.UpdateTaskService
+	userMiddleware    *middleware.UserMiddleware
 }
 
 func (c *TaskController) SetRoutes(r chi.Router) {
 	r.Route("/tasks", func(r chi.Router) {
+		r.Use(c.userMiddleware.UserMiddleware)
 		r.Post("/", c.CreateTask)
-		r.Delete("/{ID:[0-9]+}", c.DeleteTask)
-		r.Get("/{userID:[0-9]+}", c.ListTasks)
+		r.Delete("/{ID}", c.DeleteTask)
+		r.Get("/{userID}", c.ListTasks)
 		r.Put("/", c.UpdateTask)
 	})
 }
@@ -45,7 +51,6 @@ func (c *TaskController) CreateTask(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&createTaskPayload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("An error ocurred:", err)
 		return
 	}
 
@@ -55,12 +60,19 @@ func (c *TaskController) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := r.Context().Value("session_user").(*userModel.User)
+	if user.ID != createTaskPayload.UserID {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
 	err = c.createTaskService.CreateTask(createTaskPayload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("An error ocurred:", err)
 		return
 	}
+
+	log.Printf("User %d performed a task", createTaskPayload.UserID)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -70,14 +82,18 @@ func (c *TaskController) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	ID, err := strconv.Atoi(chi.URLParam(r, "ID"))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("An error ocurred:", err)
+		return
+	}
+
+	user := r.Context().Value("session_user").(*userModel.User)
+	if user.UserRole != userModel.Manager {
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
 	err = c.deleteTaskService.DeleteTask(ID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("An error ocurred:", err)
 		return
 	}
 
@@ -89,14 +105,18 @@ func (c *TaskController) ListTasks(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "userID"))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("An error ocurred:", err)
+		return
+	}
+
+	user := r.Context().Value("session_user").(*userModel.User)
+	if user.ID != userID || user.UserRole != userModel.Manager {
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
 	tasks, err := c.listTasksService.ListTasks(userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("An error ocurred:", err)
 		return
 	}
 
@@ -118,7 +138,6 @@ func (c *TaskController) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&updateTaskPayload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("An error ocurred:", err)
 		return
 	}
 
@@ -128,10 +147,15 @@ func (c *TaskController) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := r.Context().Value("session_user").(*userModel.User)
+	if user.ID != updateTaskPayload.UserID {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
 	err = c.updateTaskService.UpdateTask(updateTaskPayload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("An error ocurred:", err)
 		return
 	}
 
